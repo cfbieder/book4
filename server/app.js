@@ -44,6 +44,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+// Configure signed cookie-based sessions so Passport can persist user logins.
 const session = require('express-session');
 app.use(session({
   secret: process.env.SECRET_KEY,
