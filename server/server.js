@@ -9,7 +9,7 @@
  *******************************************************************************************************/
 
 //App.js contains main functions
-//const app = require("./app");
+const app = require("./app");
 
 
 

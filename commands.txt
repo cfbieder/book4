@@ -1,3 +1,15 @@
 
 #force stop of mongo
 sudo systemctl stop mongod
+
+#start docker
+docker compose up -d
+
+#run docker that is in container
+mongosh "mongodb://localhost:27017"
+
+
+#restore mogno backup
+docker exec -it mongo1 bash -lc \
+'mongorestore --uri="mongodb://localhost:27017/?authSource=admin" \
+  --db books --drop /dump/books'
