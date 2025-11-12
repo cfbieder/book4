@@ -17,5 +17,5 @@ const app = require("./app");
 console.log("Listening")
 const port = process.env.PORT || 3001;
 app.listen(port, () => {
-    console.log(`[DA] Server Started: Running on port ${port}`);
+    console.log(`[SERVER] Server Started: Running on port ${port}`);
 });

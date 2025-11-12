@@ -4,12 +4,18 @@ sudo systemctl stop mongod
 
 #start docker
 docker compose up -d
+docker compose up -d mongodb
 
 #run docker that is in container
 mongosh "mongodb://localhost:27017"
 
+#build docker file
+docker build -f Dockerfile.server -t bookdb-server .
+docker run --rm -p 3001:5000 --name bookdb-api bookdb-server
+docker run --rm -d -p 3001:5000 --name bookdb-api bookdb-server
+docker stop bookdb-api
+
 
 #restore mogno backup
-docker exec -it mongo1 bash -lc \
-'mongorestore --uri="mongodb://localhost:27017/?authSource=admin" \
-  --db books --drop /dump/books'
+docker exec -it mongo1 bash -lc 'mongorestore --uri="mongodb://localhost:27017/?authSource=admin" --db books --drop /dump/books'
+docker exec -it mongo1 bash -lc 'mongorestore --uri="mongodb://localhost:27017/" --db books --drop /dump/books'
