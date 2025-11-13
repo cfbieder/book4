@@ -1,0 +1,135 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(120deg, #f7fafc 0%, #edf2f7 100%);
+  padding: 1rem;
+}
+
+.panelWrapper {
+  display: flex;
+  gap: 2rem;
+  width: 100%;
+  max-width: 960px;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.card {
+  width: 100%;
+  max-width: 420px;
+  flex: 0 1 420px;
+  background-color: #fff;
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 15px 45px rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-sizing: border-box;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.subtitle {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: block;
+}
+
+.input {
+  border-radius: 10px;
+  border: 1px solid #cbd5f5;
+  padding: 0.85rem 1rem;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  outline: none;
+}
+
+.button {
+  margin-top: 1rem;
+  border: none;
+  border-radius: 10px;
+  padding: 0.9rem;
+  font-size: 1rem;
+  font-weight: 600;
+  background-color: #2563eb;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.button:hover:not(:disabled) {
+  background-color: #1e4fc6;
+  transform: translateY(-1px);
+}
+
+.button:disabled {
+  background-color: #93c5fd;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.error {
+  color: #dc2626;
+  margin: 0;
+}
+
+.success {
+  color: #059669;
+  margin: 0;
+}
+
+.statusPanel {
+  flex: 1;
+  min-width: 220px;
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(3px);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+.statusTitle {
+  margin: 0 0 0.5rem;
+  font-size: 1.3rem;
+}
+
+.statusText {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .panelWrapper {
+    flex-direction: column;
+    max-width: 420px;
+  }
+
+  .statusPanel {
+    padding: 1.5rem;
+  }
+}

@@ -32,9 +32,30 @@ var bookRoute = require("./routes/bookRouter");
 const express = require("express");
 const app = express()
 
-var cors = require("cors");
-app.use(cors());
 
+// CORS configuration
+var cors = require("cors");
+const allowedOrigins = [
+  "http://192.168.1.252:5173",
+  process.env.CLIENT_ORIGIN
+].filter(Boolean);
+const corsOptions = {
+  origin(origin, cb) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return cb(null, true);
+    }
+    return cb(new Error("Not allowed by CORS"));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+};
+const corsMiddleware = cors(corsOptions);
+app.use(corsMiddleware);
+app.options(/.*/, corsMiddleware); // ensure preflights pick up the same settings
+
+
+// Get server IP address
 var ip = require("ip");
 console.log("[SERVER] IP address is", ip.address());
 
