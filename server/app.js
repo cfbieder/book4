@@ -26,6 +26,7 @@ var LocalStrategy = require("passport-local").Strategy;
 
 
 var usersRoute = require("./routes/users");
+var bookRoute = require("./routes/bookRouter");
 
 // Use Express for routing of REST calls
 const express = require("express");
@@ -67,6 +68,7 @@ var db = process.env.MONGO_URI;
 console.log("[SERVER] Mongo URI: ", db);
 
 app.use("/api/users", usersRoute);
+app.use("/api/books", bookRoute);
 
 
 //Helper for database transactions with MongoDB    

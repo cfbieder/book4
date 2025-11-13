@@ -1,3 +1,19 @@
+/******************************************************************************************************
+ * Data Server  Book Routes
+ * Chris Biedermann
+ * V1.0
+ * November 2025
+ * 
+ * 
+ * ROUTES SERVED
+ * get / - get all books
+ * post / - add new book(s)
+ * delete / - delete all books
+ * 
+ ****************************************************************************************************/
+
+
+
 var express = require("express");
 var bodyParser = require("body-parser");
 var mongoose = require("mongoose");
@@ -24,28 +40,18 @@ router
     });
   })
 
-  .post(Verify.verifyOrdinaryUser, function(req, res, next) {
-    // create a section, information comes from AJAX request from Angular
-    if (req.body.constructor === Array) {
-      //if more than one entry
-      req.body.forEach(function(entry) {
-        Books.create(entry, function(err, book) {
-          if (err) res.send(err);
-        });
-      });
+  .post(Verify.verifyOrdinaryUser, async function(req, res, next) {
+    try {
+      if (Array.isArray(req.body)) {
+        await Books.insertMany(req.body);
+        return res.json({ status: "done" });
+      }
 
-      res.json({ status: "done" });
-    } //if single entr not array
-    else {
-      Books.create(req.body, function(err, book) {
-        if (err) res.send(err);
-
-        // get and return all the sections after you create another
-        Books.find(function(err, books) {
-          if (err) res.send(err);
-          res.json(books);
-        });
-      });
+      await Books.create(req.body);
+      const books = await Books.find();
+      res.json(books);
+    } catch (err) {
+      next(err);
     }
   })
 
@@ -62,19 +68,22 @@ router
 
 router
   .route("/upload")
-  .post(Verify.verifyOrdinaryUser, function(req, res, next) {
-    var data = require("../views/books.json");
-    var l = data.length - 1;
-    var out = [];
-    for (var i = 0; i < l; i++) {
-      out.push(data[i].title);
-      Books.create(data[i], function(err, book) {
-        if (err) res.send(err);
-        console.log(book.title);
+  .post(Verify.verifyOrdinaryUser, async function(req, res, next) {
+    try {
+      var data = require("../views/books.json");
+      var l = data.length - 1;
+      var payload = data.slice(0, l);
+      var out = payload.map(function(entry) {
+        return entry.title;
       });
-      if (i == l - 1) {
-        res.json({ val: out });
+
+      if (payload.length) {
+        await Books.insertMany(payload);
       }
+
+      res.json({ val: out });
+    } catch (err) {
+      next(err);
     }
   })
 
