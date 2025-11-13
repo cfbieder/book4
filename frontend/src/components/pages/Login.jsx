@@ -26,7 +26,10 @@ async function loginRequest({ username, password }) {
       `Unable to sign in (status ${response.status})`;
     throw new Error(message);
   }
-
+  
+  sessionStorage.setItem("login", "Y");
+  sessionStorage.setItem("token", payload.token);
+  sessionStorage.setItem("User", username);
   return payload;
 }
 
