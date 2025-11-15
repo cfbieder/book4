@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Rest from "../js/rest";
+import { getBookTimestamp, sortBooks } from "../js/utils";
 import NavigationBar from "../common/NavigationBar";
 import TitleBar from "../ui/TitleBar";
 import BookCard from "../ui/BookCard";
@@ -9,25 +10,6 @@ import Pagination from "../ui/Pagination";
 import "./ViewBooks.css";
 
 const BOOKS_PER_PAGE = 12;
-const WINDOWS_FILE_TIME_OFFSET = 116444736000000000;
-const WINDOWS_TICKS_PER_MS = 10000;
-
-const getBookTimestamp = (book) => {
-  if (!book) {
-    return null;
-  }
-  const unixTimestamp = Number(book?.dateunix);
-  if (Number.isFinite(unixTimestamp) && unixTimestamp > 0) {
-    return unixTimestamp < 1e12 ? unixTimestamp * 1000 : unixTimestamp;
-  }
-  const windowsFileTime = Number(book?.dateread);
-  if (Number.isFinite(windowsFileTime) && windowsFileTime > 0) {
-    const millisSinceUnixEpoch =
-      (windowsFileTime - WINDOWS_FILE_TIME_OFFSET) / WINDOWS_TICKS_PER_MS;
-    return Number.isFinite(millisSinceUnixEpoch) ? millisSinceUnixEpoch : null;
-  }
-  return null;
-};
 
 function ViewBooks() {
   const [isSessionValid, setIsSessionValid] = useState(null);
@@ -39,6 +21,8 @@ function ViewBooks() {
   const [titleSortOrder, setTitleSortOrder] = useState("asc");
   const [dateSortOrder, setDateSortOrder] = useState("desc");
   const [authorSortOrder, setAuthorSortOrder] = useState("asc");
+  const [selectedYear, setSelectedYear] = useState("all");
+  const [selectedAuthor, setSelectedAuthor] = useState("all");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -75,7 +59,84 @@ function ViewBooks() {
     }
   }, [isSessionValid, navigate]);
 
-  const totalPages = Math.max(1, Math.ceil(books.length / BOOKS_PER_PAGE));
+  const availableYears = useMemo(() => {
+    if (!Array.isArray(books) || books.length === 0) {
+      return [];
+    }
+    const years = new Set();
+    books.forEach((book) => {
+      const timestamp = getBookTimestamp(book);
+      if (timestamp == null) {
+        return;
+      }
+      const year = new Date(timestamp).getUTCFullYear();
+      if (Number.isFinite(year)) {
+        years.add(year);
+      }
+    });
+    return Array.from(years)
+      .sort((a, b) => b - a)
+      .map(String);
+  }, [books]);
+
+  const availableAuthors = useMemo(() => {
+    if (!Array.isArray(books) || books.length === 0) {
+      return [];
+    }
+    const authors = new Set();
+    books.forEach((book) => {
+      const author = (book?.author || "").trim();
+      if (author) {
+        authors.add(author);
+      }
+    });
+    return Array.from(authors).sort((a, b) => a.localeCompare(b));
+  }, [books]);
+
+  useEffect(() => {
+    if (selectedYear !== "all" && !availableYears.includes(selectedYear)) {
+      setSelectedYear("all");
+      setCurrentPage(1);
+    }
+  }, [availableYears, selectedYear]);
+
+  useEffect(() => {
+    if (
+      selectedAuthor !== "all" &&
+      !availableAuthors.includes(selectedAuthor)
+    ) {
+      setSelectedAuthor("all");
+      setCurrentPage(1);
+    }
+  }, [availableAuthors, selectedAuthor]);
+
+  const filteredBooks = useMemo(() => {
+    if (!Array.isArray(books)) {
+      return [];
+    }
+    return books.filter((book) => {
+      if (selectedAuthor !== "all") {
+        const author = (book?.author || "").trim();
+        if (author !== selectedAuthor) {
+          return false;
+        }
+      }
+      if (selectedYear === "all") {
+        return true;
+      }
+      const timestamp = getBookTimestamp(book);
+      if (timestamp == null) {
+        return false;
+      }
+      const year = new Date(timestamp).getUTCFullYear();
+      return Number.isFinite(year) && String(year) === selectedYear;
+    });
+  }, [books, selectedYear, selectedAuthor]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredBooks.length / BOOKS_PER_PAGE)
+  );
 
   useEffect(() => {
     setCurrentPage((prev) => Math.min(prev, totalPages));
@@ -83,60 +144,23 @@ function ViewBooks() {
 
 
   const sortedBooks = useMemo(() => {
-    const normalize = (value) =>
-      (value || "").toString().toLocaleLowerCase("en-US");
-    const compareTitles = (a, b) => {
-      const aTitle = normalize(a.title);
-      const bTitle = normalize(b.title);
-      if (aTitle === bTitle) {
-        return 0;
-      }
-      const comparison = aTitle > bTitle ? 1 : -1;
-      return titleSortOrder === "asc" ? comparison : -comparison;
-    };
-
-    const compareAuthors = (a, b) => {
-      const aAuthor = normalize(a.author);
-      const bAuthor = normalize(b.author);
-      if (aAuthor === bAuthor) {
-        return 0;
-      }
-      const comparison = aAuthor > bAuthor ? 1 : -1;
-      return authorSortOrder === "asc" ? comparison : -comparison;
-    };
-
-    const compareDates = (a, b) => {
-      const aDate = getBookTimestamp(a);
-      const bDate = getBookTimestamp(b);
-      if (aDate == null && bDate == null) {
-        return 0;
-      }
-      if (aDate == null) {
-        return dateSortOrder === "asc" ? 1 : -1;
-      }
-      if (bDate == null) {
-        return dateSortOrder === "asc" ? -1 : 1;
-      }
-      if (aDate === bDate) {
-        return 0;
-      }
-      const comparison = aDate > bDate ? 1 : -1;
-      return dateSortOrder === "asc" ? comparison : -comparison;
-    };
-
-    const sorter =
-      sortBy === "date"
-        ? compareDates
-        : sortBy === "author"
-        ? compareAuthors
-        : compareTitles;
-    return [...books].sort(sorter);
-  }, [books, sortBy, titleSortOrder, authorSortOrder, dateSortOrder]);
+    return sortBooks(filteredBooks, {
+      sortBy,
+      titleSortOrder,
+      authorSortOrder,
+      dateSortOrder,
+    });
+  }, [filteredBooks, sortBy, titleSortOrder, authorSortOrder, dateSortOrder]);
 
   const paginatedBooks = useMemo(() => {
     const start = (currentPage - 1) * BOOKS_PER_PAGE;
     return sortedBooks.slice(start, start + BOOKS_PER_PAGE);
   }, [sortedBooks, currentPage]);
+
+  const handleYearFilterChange = (nextYear) => {
+    setSelectedYear(nextYear);
+    setCurrentPage(1);
+  };
 
   const handleTitleSortToggle = () => {
     setSortBy("title");
@@ -153,6 +177,18 @@ function ViewBooks() {
     setAuthorSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
   };
 
+  const handleAuthorFilterChange = (nextAuthor) => {
+    setSelectedAuthor(nextAuthor);
+    setCurrentPage(1);
+  };
+
+  const handleBookOpen = (bookId) => {
+    if (!bookId) {
+      return;
+    }
+    navigate(`/books/${bookId}`);
+  };
+
   if (!isSessionValid) {
     return null;
   }
@@ -163,6 +199,12 @@ function ViewBooks() {
       <main style={{ padding: "2rem", flex: 1 }}>
         <TitleBar title="View Books" />
         <BookCardTools
+          selectedYear={selectedYear}
+          availableYears={availableYears}
+          onYearFilterChange={handleYearFilterChange}
+          selectedAuthor={selectedAuthor}
+          availableAuthors={availableAuthors}
+          onAuthorFilterChange={handleAuthorFilterChange}
           titleSortOrder={titleSortOrder}
           dateSortOrder={dateSortOrder}
           onTitleSortToggle={handleTitleSortToggle}
@@ -177,19 +219,24 @@ function ViewBooks() {
         )}
         {isLoading ? (
           <p>Loading books...</p>
-        ) : books.length === 0 ? (
-          <p>No books available.</p>
+        ) : filteredBooks.length === 0 ? (
+          <p>
+            {selectedYear === "all" && selectedAuthor === "all"
+              ? "No books available."
+              : "No books match the selected filters."}
+          </p>
         ) : (
           <section className="viewBooks__grid">
             {paginatedBooks.map((book) => (
               <BookCard
                 key={book._id || `${book.title}-${book.author}`}
                 book={book}
+                onDoubleClick={() => handleBookOpen(book._id)}
               />
             ))}
           </section>
         )}
-        {books.length > BOOKS_PER_PAGE && (
+        {filteredBooks.length > BOOKS_PER_PAGE && (
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}

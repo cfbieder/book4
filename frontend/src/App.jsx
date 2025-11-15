@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Home from './components/pages/Home'
 import Login from './components/pages/Login'
 import ViewBooks from './components/pages/ViewBooks'
+import BookDetails from './components/pages/BookDetails'
 function App() {
   return (
     <BrowserRouter>
@@ -9,6 +10,7 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/books" element={<ViewBooks />} />
+        <Route path="/books/:bookId" element={<BookDetails />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

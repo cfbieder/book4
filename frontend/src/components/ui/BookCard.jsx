@@ -21,7 +21,7 @@ const coverStyles = {
 const resolveCoverImage = (imageUrl) =>
   typeof imageUrl === "string" && imageUrl.trim().length ? imageUrl : null;
 
-function BookCard({ book }) {
+function BookCard({ book, onDoubleClick }) {
   if (!book) {
     return null;
   }
@@ -29,7 +29,13 @@ function BookCard({ book }) {
   const dateRead = formatDateRead(book);
 
   return (
-    <article style={cardStyles}>
+    <article
+      style={{
+        ...cardStyles,
+        cursor: onDoubleClick ? "pointer" : "default",
+      }}
+      onDoubleClick={onDoubleClick}
+    >
       {coverImage && (
         <img
           src={coverImage}

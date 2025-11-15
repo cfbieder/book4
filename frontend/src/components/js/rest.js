@@ -85,4 +85,65 @@ export default class Rest {
     }
   }
 
+  static async getBook(bookId) {
+    if (!bookId) {
+      throw new Error("Book id is required");
+    }
+    const response = await fetch(`${apiBase}/api/books/${bookId}`, {
+      credentials: "include",
+    });
+    if (!response.ok) {
+      throw new Error(`Unable to load book (status ${response.status})`);
+    }
+    return await response.json();
+  }
+
+  static async updateBook(bookId, updates) {
+    if (!bookId) {
+      throw new Error("Book id is required");
+    }
+    const token = sessionStorage.getItem("token");
+    const response = await fetch(`${apiBase}/api/books/${bookId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { "x-access-token": token } : {}),
+      },
+      credentials: "include",
+      body: JSON.stringify(updates),
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(
+        payload?.message ||
+          payload?.err ||
+          `Unable to update book (status ${response.status})`
+      );
+    }
+    return await response.json();
+  }
+
+  static async deleteBook(bookId) {
+    if (!bookId) {
+      throw new Error("Book id is required");
+    }
+    const token = sessionStorage.getItem("token");
+    const response = await fetch(`${apiBase}/api/books/${bookId}`, {
+      method: "DELETE",
+      headers: {
+        ...(token ? { "x-access-token": token } : {}),
+      },
+      credentials: "include",
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(
+        payload?.message ||
+          payload?.err ||
+          `Unable to delete book (status ${response.status})`
+      );
+    }
+    return await response.json();
+  }
+
 }
