@@ -34,29 +34,32 @@ router.route('/')
     }
   });
 
-router.delete('/:id', Verify.verifyOrdinaryUser,function (req, res, next) {
-    
-		User.remove({
-			_id: req.params.id
-		}, function (err, users) {
-			if (err)
-				res.send(err);
-
-			// get and return all the todos after you create another
-			User.find(function (err, users) {
-				if (err)
-					res.send(err)
-				res.json(users);
+router.delete('/:id', Verify.verifyOrdinaryUser, async function (req, res, next) {
+		try {
+			await User.deleteOne({
+				_id: req.params.id
 			});
-		});
+
+			// return the updated user list after the delete
+			const users = await User.find({});
+			res.json(users);
+		} catch (err) {
+			return next(err);
+		}
 	});
 
-router.put('/:id', Verify.verifyOrdinaryUser,function (req,res,next){
-  User.findOneAndUpdate({_id: req.body._id}, {lastname : req.body.lastname}, {upsert:false}, function(err,users){
-    if (err) return res.send(500, { error: err })
+router.put('/:id', Verify.verifyOrdinaryUser, async function (req,res,next){
+  try {
+    const users = await User.findOneAndUpdate(
+      {_id: req.body._id},
+      {lastname : req.body.lastname},
+      {upsert:false, new: true}
+    );
     res.json(users);
-  })
-})
+  } catch (err) {
+    return next(err);
+  }
+});
 
 router.get('/valid', function(req,res) {
   var sts = Verify.checkUserStatus(req,res);
@@ -64,24 +67,37 @@ router.get('/valid', function(req,res) {
   res.json(s);
 })
 
-router.post('/admin', Verify.verifyOrdinaryUser,function(req,res){
+router.post('/admin', Verify.verifyOrdinaryUser, async function(req,res,next){
 
- var a = (req.body.admin == 'true');
-
-  User.findOneAndUpdate({_id: req.body.id}, {admin : a}, {upsert:false}, function(err,users){
-    if (err) return res.send(500, { error: err })
+  try {
+    const users = await User.findOneAndUpdate(
+      {_id: req.body.id},
+      {admin : true},
+      {upsert:false, new: true}
+    );
     res.json(users);
-
-  })
+  } catch (err) {
+    return next(err);
+  }
 });
 
-router.post('/update', Verify.verifyOrdinaryUser,function(req,res){
-  User.findOneAndUpdate({_id: req.body.id}, {username : req.body.username, lastname : req.body.lastname, firstname : req.body.firstname}, {upsert:false}, function(err,users){
-    if (err) return res.send(500, { error: err })
+router.post('/update', Verify.verifyOrdinaryUser, async function(req,res,next){
+  try {
+    const update = {
+      username : req.body.username,
+      lastname : req.body.lastname,
+      firstname : req.body.firstname
+    };
+    const users = await User.findOneAndUpdate(
+      {_id: req.body.id},
+      update,
+      {upsert:false, new: true}
+    );
     res.json(users);
-
-  })
-})
+  } catch (err) {
+    return next(err);
+  }
+});
 
 router.post('/register', Verify.verifyOrdinaryUser,function(req, res) {
     User.register(new User({ username : req.body.username }),

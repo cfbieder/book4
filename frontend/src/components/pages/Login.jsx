@@ -1,43 +1,15 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "./Login.module.css";
-import LoginPanel from "../ui/loginpanel";
-
-const apiBase = import.meta.env.VITE_APP_API ?? "";
-
-
-async function loginRequest({ username, password }) {
-  const response = await fetch(`${apiBase}/api/users/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify({
-      username,
-      password,
-    }),
-  });
-
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok || payload.success !== true) {
-    const message =
-      payload?.err ||
-      payload?.status ||
-      `Unable to sign in (status ${response.status})`;
-    throw new Error(message);
-  }
-  
-  sessionStorage.setItem("login", "Y");
-  sessionStorage.setItem("token", payload.token);
-  sessionStorage.setItem("User", username);
-  return payload;
-}
+import LoginPanel from "../ui/LoginPanel";
+import Rest from "../js/rest";
 
 
 const initialState = { username: "", password: "" };
 
 function Login({ onLogin }) {
 
+  const navigate = useNavigate();
   const [formValues, setFormValues] = useState(initialState);
   const [errorMessage, setErrorMessage] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
@@ -63,13 +35,14 @@ function Login({ onLogin }) {
     setStatusMessage("");
 
     try {
-      const result = await loginRequest(formValues);
+      const result = await Rest.login(formValues);
       if (typeof onLogin === "function") {
         onLogin(result);
       }
       setStatusMessage(result.status || "Successfully signed in.");
       setFormValues(initialState);
       setIsLoggedIn(true);
+      navigate("/", { replace: true });
     } catch (error) {
       setErrorMessage(
         error?.message || "Unable to sign in. Please try again."

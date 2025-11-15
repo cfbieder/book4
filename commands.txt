@@ -19,3 +19,10 @@ docker stop bookdb-api
 #restore mogno backup
 docker exec -it mongodb bash -lc 'mongorestore --uri="mongodb://localhost:27017/?authSource=admin" --db books --drop /dump/books'
 docker exec -it mongodb bash -lc 'mongorestore --uri="mongodb://localhost:27017/" --db books --drop /dump/books'
+
+
+
+#Linus process
+sudo netstat -tulpn | grep :27017
+sudo kill
+

@@ -33,11 +33,13 @@ Books = require("../models/books");
 router
   .route("/")
   //.get(Verify.verifyOrdinaryUser, function(req, res, next) {
-  .get(function(req, res, next) { 
-    Books.find(function(err, books) {
-      if (err) res.send(err);
+  .get(async function(req, res, next) {
+    try {
+      const books = await Books.find();
       res.json(books);
-    });
+    } catch (err) {
+      next(err);
+    }
   })
 
   .post(Verify.verifyOrdinaryUser, async function(req, res, next) {
@@ -55,15 +57,14 @@ router
     }
   })
 
-  .delete(Verify.verifyOrdinaryUser, function(req, res, next) {
-    Books.remove(function(err) {
-      if (err) res.send(err);
-      Books.find(function(err, books) {
-        // if there is an error retrieving, send the error. nothing after res.send(err) will execute
-        if (err) res.send(err);
-        res.json(books); // return all todos in JSON format
-      });
-    });
+  .delete(Verify.verifyOrdinaryUser, async function(req, res, next) {
+    try {
+      await Books.deleteMany({});
+      const books = await Books.find();
+      res.json(books);
+    } catch (err) {
+      next(err);
+    }
   });
 
 router
@@ -134,72 +135,74 @@ router.route("/google/:query").get(function(req, res, next) {
   });
 });
 
-router.route("/backup/:name").post(function(req, res, next) {
-  var file = req.params.name + ".json";
-  Books.find(function(err, books) {
+router.route("/backup/:name").post(async function(req, res, next) {
+  try {
+    var file = req.params.name + ".json";
+    const books = await Books.find();
     Jsonfile.writeFile(file, books, function(err) {
       if (err) {
         console.log("error: ", err);
-        res.json({ error: err });
+        return res.json({ error: err });
       }
       console.log(req.params.name);
       res.json({ status: "ok" });
     });
-  });
+  } catch (err) {
+    next(err);
+  }
 });
 
 router
-.route("/find")
-.get(function(req, res, next) {
-  key = Object.keys(req.body)
-  value = Object.values(req.body)
-  var queryParam = {};
-  queryParam[key] = {$regex: value};
-  Books.find(queryParam, function(err, books) {
-      if (err) res.send(err);
+  .route("/find")
+  .get(async function(req, res, next) {
+    try {
+      const key = Object.keys(req.body);
+      const value = Object.values(req.body);
+      var queryParam = {};
+      queryParam[key] = { $regex: value };
+      const books = await Books.find(queryParam);
       res.json(books); // return all todos in JSON format
+    } catch (err) {
+      next(err);
+    }
   });
-
-
-});
 
 router
   .route("/:id")
-  .get(function(req, res, next) {
-    Books.findById(req.params.id, function(err, book) {
-      // if there is an error retrieving, send the error. nothing after res.send(err) will execute
-      if (err) res.send(err);
+  .get(async function(req, res, next) {
+    try {
+      const book = await Books.findById(req.params.id);
       res.json(book); // return all todos in JSON format
-    });
+    } catch (err) {
+      next(err);
+    }
   })
 
-  .put(Verify.verifyOrdinaryUser, function(req, res, next) {
-    Books.findByIdAndUpdate(
-      req.params.id,
-      { $set: req.body },
-      { new: true },
-      function(err, result) {
-        if (err) res.send(err);
-        res.send(result);
-      }
-    );
+  .put(Verify.verifyOrdinaryUser, async function(req, res, next) {
+    try {
+      const result = await Books.findByIdAndUpdate(
+        req.params.id,
+        { $set: req.body },
+        { new: true }
+      );
+      res.send(result);
+    } catch (err) {
+      next(err);
+    }
   })
 
-  .delete(Verify.verifyOrdinaryUser, function(req, res, next) {
-    Books.remove(
-      {
+  .delete(Verify.verifyOrdinaryUser, async function(req, res, next) {
+    try {
+      await Books.deleteOne({
         _id: req.params.id
-      },
-      function(err, book) {
-        if (err) res.send(err);
+      });
 
-        // get and return all the todos after you create another
-        Books.find(function(err, books) {
-          if (err) res.send(err);
-          res.json(books);
-        });
-      }
-    );
+      // get and return all the todos after you create another
+      const books = await Books.find();
+      res.json(books);
+    } catch (err) {
+      next(err);
+    }
   });
 
 module.exports = router;

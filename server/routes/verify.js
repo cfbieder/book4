@@ -13,7 +13,8 @@ exports.getToken = function (user) {
 exports.checkUserStatus = function(req,res) {
    
     var status = "none"
-    var token = req.body.token || req.query.token || req.headers['x-access-token'];
+    var token = req.headers['x-access-token'] || req.body.token || req.query.token;
+    
         if (token) {
             // verifies secret and checks exp
             jwt.verify(token, secretKey, function (err, decoded) {
@@ -31,8 +32,7 @@ exports.checkUserStatus = function(req,res) {
 
 exports.verifyOrdinaryUser = function (req, res, next) {
     // check header or url parameters or post parameters for token
-    var token = req.body.token || req.query.token || req.headers['x-access-token'];
-
+    var token = req.headers['x-access-token'] || req.body.token || req.query.token;
     // decode token
     if (token) {
         // verifies secret and checks exp
@@ -50,7 +50,8 @@ exports.verifyOrdinaryUser = function (req, res, next) {
     } else {
         // if there is no token
         // return an error
-        var err = new Error('No token provided!');
+        var err = new Error('No token provided***!');
+        console.log("No token provided!");
         err.status = 403;
         return next(err);
     }
